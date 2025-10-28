@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vale Digital Health Score</title>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        
+        /* Define the Custom Color Palette */
+        :root {
+            --color-jet-black: #000000;
+            --color-soft-gray: #BEBEBE;
+            --color-pearl-white: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-jet-black); /* Jet Black Background */
+            color: var(--color-soft-gray); /* Soft Gray Text */
+        }
+
+        .bg-jet-black { background-color: var(--color-jet-black); }
+        .text-jet-black { color: var(--color-jet-black); }
+        .text-soft-gray { color: var(--color-soft-gray); }
+        .bg-soft-gray { background-color: var(--color-soft-gray); }
+        .text-pearl-white { color: var(--color-pearl-white); }
+        .bg-pearl-white { background-color: var(--color-pearl-white); }
+        .border-soft-gray { border-color: var(--color-soft-gray); }
+        
+        /* Custom Button Styling: Black background with White/Gray text/border */
+        .cta-button {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--color-soft-gray);
+        }
+        .cta-button:hover {
+            background-color: var(--color-soft-gray);
+            color: var(--color-jet-black);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(255, 255, 255, 0.2);
+        }
+        
+        .score-display {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.05em;
+        }
+        
+        /* Styles for the loading animation */
+        .dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--color-pearl-white);
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 3px;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .dot-2 { animation-delay: -0.32s; }
+        .dot-3 { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+<main class="w-full max-w-2xl bg-jet-black p-6 sm:p-10 rounded-3xl shadow-2xl border border-soft-gray/30">
+    <header class="text-center mb-10">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-pearl-white mb-2">
+            Vale Digital Health Score
+        </h1>
+        <p class="text-soft-gray text-lg">
+            Compare your website to the top 50 in your sector.
+        </p>
+    </header>
+
+    <!-- Score Input and Display Area -->
+    <div id="input-section" class="space-y-6">
+        <input type="url" id="websiteUrl" placeholder="Enter your full website link (e.g., https://exit4foodhall.com)"
+               class="w-full p-4 rounded-xl bg-jet-black text-pearl-white border-2 border-soft-gray focus:border-pearl-white focus:outline-none placeholder-soft-gray/60"
+               value=""
+               required>
+
+        <button onclick="analyzeWebsite()" id="analyzeButton"
+                class="w-full cta-button text-soft-gray font-bold text-lg px-6 py-4 rounded-xl hover:text-jet-black">
+            Get My Free Score
+        </button>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loading-section" class="hidden text-center py-10">
+        <p class="text-soft-gray mb-4">Analyzing performance metrics and industry benchmarks...</p>
+        <div class="space-x-2">
+            <span class="dot"></span>
+            <span class="dot dot-2"></span>
+            <span class="dot dot-3"></span>
+        </div>
+    </div>
+
+    <!-- Results Display Area -->
+    <div id="results-section" class="hidden mt-8 p-6 bg-jet-black rounded-xl border border-soft-gray/50 shadow-inner">
+        <div class="grid grid-cols-2 gap-4 text-center border-b pb-4 border-soft-gray/30 mb-6">
+            <div>
+                <p class="text-soft-gray text-sm uppercase tracking-wider">Your Current Score</p>
+                <p class="text-5xl font-extrabold text-pearl-white score-display" id="userScore">--</p>
+            </div>
+            <div>
+                <p class="text-soft-gray text-sm uppercase tracking-wider" id="benchmarkLabel">Industry Benchmark</p>
+                <p class="text-5xl font-extrabold text-soft-gray score-display" id="benchmarkScore">--</p>
+            </div>
+        </div>
+
+        <h3 class="text-2xl font-semibold text-pearl-white mb-3">Key Finding: Conversion Gap</h3>
+        <p class="text-soft-gray mb-6" id="keyFinding">
+            We found a 15-point gap in conversion performance. This means your website is letting potential customers slip away.
+        </p>
+        
+        <!-- Call to Action for Report -->
+        <button onclick="showReportForm()" id="reportCtaButton"
+                class="w-full cta-button bg-jet-black text-pearl-white font-bold text-lg px-6 py-4 rounded-xl hover:text-jet-black hover:bg-soft-gray">
+            Unlock Detailed Analysis Report
+        </button>
+    </div>
+
+    <!-- Detailed Report Form (Hidden initially) -->
+    <div id="report-form-section" class="hidden mt-8 p-6 bg-jet-black rounded-xl border-2 border-soft-gray/50 shadow-lg">
+        <h3 class="text-xl font-semibold text-pearl-white mb-4 text-center">
+            Send My Personalized Report
+        </h3>
+        <form onsubmit="submitReport(event)" class="space-y-4">
+            <input type="text" id="leadName" placeholder="Your Name" required
+                   class="w-full p-3 rounded-lg bg-jet-black text-pearl-white border border-soft-gray/50 focus:border-pearl-white focus:outline-none placeholder-soft-gray">
+            <input type="email" id="leadEmail" placeholder="Work Email" required
+                   class="w-full p-3 rounded-lg bg-jet-black text-pearl-white border border-soft-gray/50 focus:border-pearl-white focus:outline-none placeholder-soft-gray">
+            
+            <button type="submit"
+                    class="w-full cta-button bg-soft-gray text-jet-black font-bold px-6 py-3 rounded-xl hover:bg-soft-gray">
+                Email My Full Report & Strategy
+            </button>
+        </form>
+    </div>
+</main>
+
+<!-- Message Box (Modal) for Confirmation -->
+<div id="message-box" class="fixed inset-0 bg-jet-black bg-opacity-70 flex items-center justify-center p-4 hidden z-20">
+    <div class="bg-pearl-white p-6 rounded-xl shadow-2xl max-w-sm w-full text-jet-black">
+        <h3 class="text-xl font-bold mb-3" id="message-title">Success!</h3>
+        <p id="message-content" class="mb-4">
+            Thank you! Your personalized report is being prepared.
+        </p>
+        <button onclick="hideMessageBox()" class="w-full bg-soft-gray text-jet-black py-2 rounded-xl font-semibold hover:opacity-80 transition">Close</button>
+    </div>
+</div>
+
+
+<script>
+    function getUrlSeed(url) {
+        let hash = 0;
+        if (url.length === 0) return hash;
+        for (let i = 0; i < url.length; i++) {
+            const char = url.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash |= 0; // Convert to 32bit integer
+        }
+        return Math.abs(hash);
+    }
+
+    function generateScore(url) {
+        const seed = getUrlSeed(url);
+        const random = (s) => () => (s = Math.sin(s * 10000) * 10000) - Math.floor(s);
+        const rand = random(seed);
+
+        // 1. Sector Identification and Benchmarks
+        let sector = 'General Business';
+        let benchmark = 80;
+        let finding = "Conversion Gap";
+
+        const urlLower = url.toLowerCase();
+
+        if (urlLower.includes('shop') || urlLower.includes('ecom') || urlLower.includes('store')) {
+            sector = 'E-Commerce / Retail';
+            benchmark = 78;
+            finding = "Mobile Checkout & Loading Speed";
+        } else if (urlLower.includes('saas') || urlLower.includes('tech') || urlLower.includes('software')) {
+            sector = 'SaaS / Tech Platform';
+            benchmark = 85;
+            finding = "Clarity of Value Proposition";
+        } else if (urlLower.includes('bank') || urlLower.includes('finance') || urlLower.includes('insurance')) {
+            sector = 'Finance / Corporate';
+            benchmark = 82;
+            finding = "Security Trust Signals & Page Speed";
+        } else if (urlLower.includes('food') || urlLower.includes('hall') || urlLower.includes('bakery') || urlLower.includes('restaurant')) {
+             // Specific adjustment for the Food Hall/Bakery scenario
+            sector = 'Local Food Service / Dining Market';
+            benchmark = 88;
+            finding = "Mobile Ordering & Hidden Logistics";
+        }
+
+        // 2. Technical and Platform Modifiers
+        let scoreModifier = 0;
+
+        // Penalty for legacy/non-optimized platforms (simulated)
+        if (urlLower.includes('wordpress') || urlLower.includes('weebly') || urlLower.includes('v1')) {
+            scoreModifier -= 5;
+        }
+        
+        // Bonus for modern/optimized indicators (simulated)
+        if (urlLower.includes('netlify') || urlLower.includes('vercel') || urlLower.includes('cdn')) {
+            scoreModifier += 3;
+        }
+        
+        // 3. Generate the Realistic Score (clustered between 65-85)
+        // Base score uses the seed for consistency and centers around a non-perfect average
+        let userScore = Math.floor(65 + (rand() * 20)) + scoreModifier;
+        
+        // Ensure score is within a reasonable range (30-95)
+        userScore = Math.max(30, Math.min(95, userScore));
+        
+        // Calculate the score gap and adjust finding if the gap is small
+        if (benchmark - userScore <= 5) {
+            finding = "Marginal UX Polish & Design Modernity"; // A smaller gap means less critical issues
+        }
+
+        return {
+            userScore: userScore,
+            benchmarkScore: benchmark,
+            sector: sector,
+            finding: finding
+        };
+    }
+
+    function showMessageBox(title, content) {
+        document.getElementById('message-title').textContent = title;
+        document.getElementById('message-content').textContent = content;
+        document.getElementById('message-box').classList.remove('hidden');
+    }
+
+    function hideMessageBox() {
+        document.getElementById('message-box').classList.add('hidden');
+    }
+
+    async function analyzeWebsite() {
+        const urlInput = document.getElementById('websiteUrl');
+        const url = urlInput.value.trim();
+
+        if (!url) {
+            showMessageBox('Error', 'Please enter a valid website link to analyze.');
+            return;
+        }
+
+        const analyzeButton = document.getElementById('analyzeButton');
+        const inputSection = document.getElementById('input-section');
+        const loadingSection = document.getElementById('loading-section');
+        const resultsSection = document.getElementById('results-section');
+
+        // Hide input, show loading
+        inputSection.classList.add('hidden');
+        loadingSection.classList.remove('hidden');
+        resultsSection.classList.add('hidden');
+        
+        // Simulate network delay for realism
+        await new Promise(resolve => setTimeout(resolve, 2000)); 
+
+        const analysis = generateScore(url);
+
+        // Update results display
+        document.getElementById('userScore').textContent = analysis.userScore + '%';
+        document.getElementById('benchmarkScore').textContent = analysis.benchmarkScore + '%';
+        document.getElementById('benchmarkLabel').textContent = analysis.sector + ' Benchmark';
+        document.getElementById('keyFinding').textContent = `We found a ${analysis.benchmarkScore - analysis.userScore} point gap in performance. Key finding: ${analysis.finding}.`;
+
+        // Hide loading, show results
+        loadingSection.classList.add('hidden');
+        resultsSection.classList.remove('hidden');
+        inputSection.classList.remove('hidden'); // Keep the input box visible for easy re-testing
+        analyzeButton.textContent = 'Re-Analyze Website';
+    }
+
+    function showReportForm() {
+        document.getElementById('report-form-section').classList.remove('hidden');
+        document.getElementById('reportCtaButton').classList.add('hidden');
+        
+        // Optionally, scroll down to the form for better UX
+        document.getElementById('report-form-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function submitReport(event) {
+        event.preventDefault();
+        const name = document.getElementById('leadName').value;
+        const email = document.getElementById('leadEmail').value;
+        const url = document.getElementById('websiteUrl').value;
+        
+        // *** CRITICAL MESSAGE FOR LEAD CONVERSION ***
+        const successMessage = `Hello ${name}, thank you for requesting the report! A detailed analysis, specific to ${url}, is being personally generated by a Vale Solutions expert. We will email the full report and strategy to ${email} within 24 hours.`;
+
+        showMessageBox('Report Requested!', successMessage);
+        
+        // Hide form after successful submission
+        document.getElementById('report-form-section').classList.add('hidden');
+        document.getElementById('reportCtaButton').classList.remove('hidden');
+        document.getElementById('reportCtaButton').textContent = 'Report Sent! Check Your Email.';
+        
+        // In a real application, this is where you would send the data to a server.
+        console.log(`Lead Captured: Name: ${name}, Email: ${email}, URL: ${url}`);
+    }
+</script>
+
+</body>
+</html>
